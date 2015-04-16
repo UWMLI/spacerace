@@ -32,7 +32,7 @@
     }
 
     Blip.prototype.live = function() {
-      var b, d, destDistance, destination, goTowards, goVector, h, _i, _j, _len, _len1, _ref, _ref1;
+      var b, clone, d, destDistance, destination, goTowards, goVector, h, _i, _j, _len, _len1, _ref, _ref1;
       destination = null;
       destDistance = 1 / 0;
       _ref = this.game.habitats;
@@ -57,7 +57,19 @@
           }
         }
       }
-      return this.age < this.expire;
+      if (this.inHabitat()) {
+        this.health = Math.min(this.maxHealth, this.health + 1);
+        if (this.health / this.maxHealth > 0.95 && Math.random() > 0.98) {
+          clone = new Blip(this.game, this.attrs);
+          clone.circle = this.circle;
+          this.health /= 2;
+          clone.health = this.health;
+          this.game.newBlips.push(clone);
+        }
+      } else {
+        this.health -= 1;
+      }
+      return this.health > 0;
     };
 
     Blip.prototype.inHabitat = function() {
@@ -183,24 +195,23 @@
         new Habitat(this, {
           circle: new Circle({
             center: new V2(35, 35),
-            radius: 30
+            radius: 40
           })
         })
       ];
       this.blips = (function() {
         var _i, _results;
         _results = [];
-        for (x = _i = 10; _i <= 100; x = _i += 5) {
+        for (x = _i = 10; _i <= 35; x = _i += 5) {
           _results.push(new Blip(this, {
             circle: new Circle({
               center: new V2(x, 0),
               radius: 5
             }),
             speed: 1,
-            age: 0,
             breed: [300, 400, 500, 600, 700],
-            expire: 1000,
-            health: 50
+            maxHealth: 150,
+            health: 100
           }));
         }
         return _results;
@@ -233,8 +244,8 @@
         b = _ref2[_j];
         _ref3 = b.circle.center.minus(this.center).times(new V2(this.zoom, this.zoom)).plus(canvasCenter), x = _ref3.x, y = _ref3.y;
         r = b.circle.radius * this.zoom;
-        this.ctx.globalAlpha = 1 - b.age / b.expire;
-        this.drawCircle(x, y, r, b.inHabitat() ? '#3a3' : '#a33');
+        this.ctx.globalAlpha = b.health / (b.maxHealth * 0.85);
+        this.drawCircle(x, y, r, b.inHabitat() ? '#1a5' : '#633');
         this.ctx.globalAlpha = 1;
       }
       this.ctx.fillStyle = 'black';
@@ -263,7 +274,8 @@
 
     Game.prototype.tick = function() {
       var b;
-      return this.blips = (function() {
+      this.newBlips = [];
+      this.blips = (function() {
         var _i, _len, _ref, _results;
         _ref = this.blips;
         _results = [];
@@ -275,6 +287,7 @@
         }
         return _results;
       }).call(this);
+      return this.blips = this.blips.concat(this.newBlips);
     };
 
     return Game;

@@ -22,8 +22,17 @@ class Blip
       for b in @game.blips
         if b isnt @
           @circle = @circle.pushBack(b.circle)
-    # @age++
-    @age < @expire
+    if @inHabitat()
+      @health = Math.min(@maxHealth, @health + 1)
+      if @health / @maxHealth > 0.95 and Math.random() > 0.98
+        clone = new Blip(@game, @attrs)
+        clone.circle = @circle
+        @health /= 2
+        clone.health = @health
+        @game.newBlips.push(clone)
+    else
+      @health -= 1
+    @health > 0
 
   inHabitat: ->
     for h in @game.habitats
@@ -96,19 +105,18 @@ class Game
       [ new Habitat @,
         circle: new Circle
           center: new V2(35, 35)
-          radius: 30
+          radius: 40
       ]
     @blips =
-      for x in [10..100] by 5
+      for x in [10..35] by 5
         new Blip(@,
           circle: new Circle
             center: new V2(x, 0)
             radius: 5
           speed: 1
-          age: 0
           breed: [300, 400, 500, 600, 700]
-          expire: 1000
-          health: 50
+          maxHealth: 150
+          health: 100
         )
     @center = new V2 0, 0
     @zoom = 3
@@ -130,8 +138,8 @@ class Game
     for b in @blips
       {x, y} = b.circle.center.minus(@center).times(new V2 @zoom, @zoom).plus(canvasCenter)
       r = b.circle.radius * @zoom
-      @ctx.globalAlpha = 1 - b.age / b.expire
-      @drawCircle x, y, r, if b.inHabitat() then '#3a3' else '#a33'
+      @ctx.globalAlpha = b.health / (b.maxHealth * 0.85)
+      @drawCircle x, y, r, if b.inHabitat() then '#1a5' else '#633'
       @ctx.globalAlpha = 1
     @ctx.fillStyle = 'black'
     @ctx.font = '20px monospace'
@@ -151,8 +159,10 @@ class Game
     delete @clickPosn
 
   tick: ->
+    @newBlips = []
     @blips =
       b for b in @blips when b.live()
+    @blips = @blips.concat(@newBlips)
 
 $(document).ready ->
   canvas = $('#the-canvas')[0]
