@@ -44,6 +44,9 @@ class Game
       @drawCircle x, y, r, '#a33'
     @ctx.strokeStyle = 'black'
     @ctx.strokeRect 0, 0, @canvas.width, @canvas.height
+    @ctx.fillStyle = 'black'
+    @ctx.font = '20px monospace'
+    @ctx.fillText "(#{@center.x.toFixed(3)}, #{@center.y.toFixed(3)})", 10, 25
 
   mousedown: (@clickPosn) ->
     @clickCenter = @center
@@ -63,9 +66,10 @@ $(document).ready ->
   canvas.width = 640
   canvas.height = 480
   window.game = new Game canvas
-  for mouseEvent in ['mousedown', 'mousemove', 'mouseup']
-    do (mouseEvent) ->
-      $('#the-canvas')[mouseEvent] (e) ->
-        {left, top} = $(this).parent().offset()
-        window.game[mouseEvent] new V2(e.pageX - left, e.pageY - top)
+  handle = (mouseEvent) -> (e) ->
+    {left, top} = $('#the-canvas').offset()
+    window.game[mouseEvent] new V2(e.pageX - left, e.pageY - top)
+  $('#the-canvas').mousedown handle('mousedown')
+  $(document).mousemove handle('mousemove')
+  $(document).mouseup handle('mouseup')
   window.game.draw()

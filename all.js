@@ -87,7 +87,10 @@
         this.drawCircle(x, y, r, '#a33');
       }
       this.ctx.strokeStyle = 'black';
-      return this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
+      this.ctx.fillStyle = 'black';
+      this.ctx.font = '20px monospace';
+      return this.ctx.fillText("(" + (this.center.x.toFixed(3)) + ", " + (this.center.y.toFixed(3)) + ")", 10, 25);
     };
 
     Game.prototype.mousedown = function(clickPosn) {
@@ -114,23 +117,21 @@
   })();
 
   $(document).ready(function() {
-    var canvas, mouseEvent, _fn, _i, _len, _ref;
+    var canvas, handle;
     canvas = $('#the-canvas')[0];
     canvas.width = 640;
     canvas.height = 480;
     window.game = new Game(canvas);
-    _ref = ['mousedown', 'mousemove', 'mouseup'];
-    _fn = function(mouseEvent) {
-      return $('#the-canvas')[mouseEvent](function(e) {
-        var left, top, _ref1;
-        _ref1 = $(this).parent().offset(), left = _ref1.left, top = _ref1.top;
+    handle = function(mouseEvent) {
+      return function(e) {
+        var left, top, _ref;
+        _ref = $('#the-canvas').offset(), left = _ref.left, top = _ref.top;
         return window.game[mouseEvent](new V2(e.pageX - left, e.pageY - top));
-      });
+      };
     };
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      mouseEvent = _ref[_i];
-      _fn(mouseEvent);
-    }
+    $('#the-canvas').mousedown(handle('mousedown'));
+    $(document).mousemove(handle('mousemove'));
+    $(document).mouseup(handle('mouseup'));
     return window.game.draw();
   });
 
