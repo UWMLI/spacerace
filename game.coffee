@@ -42,8 +42,6 @@ class Game
       {x, y} = b.posn.minus(@center).times(new V2 @zoom, @zoom).plus(canvasCenter)
       r = b.radius * @zoom
       @drawCircle x, y, r, '#a33'
-    @ctx.strokeStyle = 'black'
-    @ctx.strokeRect 0, 0, @canvas.width, @canvas.height
     @ctx.fillStyle = 'black'
     @ctx.font = '20px monospace'
     @ctx.fillText "(#{@center.x.toFixed(3)}, #{@center.y.toFixed(3)})", 10, 25
@@ -63,8 +61,6 @@ class Game
 
 $(document).ready ->
   canvas = $('#the-canvas')[0]
-  canvas.width = 640
-  canvas.height = 480
   window.game = new Game canvas
   handle = (mouseEvent) -> (e) ->
     {left, top} = $('#the-canvas').offset()
@@ -72,4 +68,9 @@ $(document).ready ->
   $('#the-canvas').mousedown handle('mousedown')
   $(document).mousemove handle('mousemove')
   $(document).mouseup handle('mouseup')
-  window.game.draw()
+  resize = ->
+    canvas.width = $(window).width()
+    canvas.height = $(window).height()
+    window.game.draw()
+  $(window).resize -> resize()
+  resize()

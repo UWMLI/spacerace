@@ -86,8 +86,6 @@
         r = b.radius * this.zoom;
         this.drawCircle(x, y, r, '#a33');
       }
-      this.ctx.strokeStyle = 'black';
-      this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
       this.ctx.fillStyle = 'black';
       this.ctx.font = '20px monospace';
       return this.ctx.fillText("(" + (this.center.x.toFixed(3)) + ", " + (this.center.y.toFixed(3)) + ")", 10, 25);
@@ -117,10 +115,8 @@
   })();
 
   $(document).ready(function() {
-    var canvas, handle;
+    var canvas, handle, resize;
     canvas = $('#the-canvas')[0];
-    canvas.width = 640;
-    canvas.height = 480;
     window.game = new Game(canvas);
     handle = function(mouseEvent) {
       return function(e) {
@@ -132,7 +128,15 @@
     $('#the-canvas').mousedown(handle('mousedown'));
     $(document).mousemove(handle('mousemove'));
     $(document).mouseup(handle('mouseup'));
-    return window.game.draw();
+    resize = function() {
+      canvas.width = $(window).width();
+      canvas.height = $(window).height();
+      return window.game.draw();
+    };
+    $(window).resize(function() {
+      return resize();
+    });
+    return resize();
   });
 
 }).call(this);
