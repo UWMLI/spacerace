@@ -24,15 +24,20 @@ class Blip
           @circle = @circle.pushBack(b.circle)
     if @inHabitat()
       @health = Math.min(@maxHealth, @health + 1)
-      if @health / @maxHealth > 0.95 and Math.random() > 0.98
+      if @health / @maxHealth > 0.95 and Math.random() > 0.99
         clone = new Blip(@game, @attrs)
         clone.circle = @circle
         @health /= 2
         clone.health = @health
         @game.newBlips.push(clone)
+        @game.births++
     else
       @health -= 1
-    @health > 0
+    if @health <= 0
+      @game.deaths++
+      false
+    else
+      true
 
   inHabitat: ->
     for h in @game.habitats
@@ -102,10 +107,21 @@ class Game
   constructor: (@canvas) ->
     @ctx = canvas.getContext '2d'
     @habitats =
-      [ new Habitat @,
+      [ new Habitat(@,
         circle: new Circle
           center: new V2(35, 35)
           radius: 40
+        )
+      , new Habitat(@,
+        circle: new Circle
+          center: new V2(0, 0)
+          radius: 20
+        )
+      , new Habitat(@,
+        circle: new Circle
+          center: new V2(-70, 0)
+          radius: 40
+        )
       ]
     @blips =
       for x in [10..35] by 5
@@ -120,6 +136,8 @@ class Game
         )
     @center = new V2 0, 0
     @zoom = 3
+    @births = 0
+    @deaths = 0
 
   drawCircle: (x, y, r, fill) ->
     @ctx.beginPath()
@@ -128,13 +146,13 @@ class Game
     @ctx.fill()
 
   draw: ->
-    @ctx.fillStyle = '#888'
+    @ctx.fillStyle = '#ddb'
     @ctx.fillRect 0, 0, @canvas.width, @canvas.height
     canvasCenter = new V2(@canvas.width * 0.5, @canvas.height * 0.5)
     for h in @habitats
       {x, y} = h.circle.center.minus(@center).times(new V2 @zoom, @zoom).plus(canvasCenter)
       r = h.circle.radius * @zoom
-      @drawCircle x, y, r, '#33a'
+      @drawCircle x, y, r, '#05a'
     for b in @blips
       {x, y} = b.circle.center.minus(@center).times(new V2 @zoom, @zoom).plus(canvasCenter)
       r = b.circle.radius * @zoom
@@ -143,7 +161,8 @@ class Game
       @ctx.globalAlpha = 1
     @ctx.fillStyle = 'black'
     @ctx.font = '20px monospace'
-    @ctx.fillText "(#{@center.x.toFixed(3)}, #{@center.y.toFixed(3)})", 10, 25
+    @ctx.fillText "Viewing (#{@center.x.toFixed(3)}, #{@center.y.toFixed(3)})", 10, 25
+    @ctx.fillText "#{@births} births, #{@deaths} deaths", 10, 50
 
   mousedown: (@clickPosn) ->
     @clickCenter = @center

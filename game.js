@@ -59,17 +59,23 @@
       }
       if (this.inHabitat()) {
         this.health = Math.min(this.maxHealth, this.health + 1);
-        if (this.health / this.maxHealth > 0.95 && Math.random() > 0.98) {
+        if (this.health / this.maxHealth > 0.95 && Math.random() > 0.99) {
           clone = new Blip(this.game, this.attrs);
           clone.circle = this.circle;
           this.health /= 2;
           clone.health = this.health;
           this.game.newBlips.push(clone);
+          this.game.births++;
         }
       } else {
         this.health -= 1;
       }
-      return this.health > 0;
+      if (this.health <= 0) {
+        this.game.deaths++;
+        return false;
+      } else {
+        return true;
+      }
     };
 
     Blip.prototype.inHabitat = function() {
@@ -197,6 +203,16 @@
             center: new V2(35, 35),
             radius: 40
           })
+        }), new Habitat(this, {
+          circle: new Circle({
+            center: new V2(0, 0),
+            radius: 20
+          })
+        }), new Habitat(this, {
+          circle: new Circle({
+            center: new V2(-70, 0),
+            radius: 40
+          })
         })
       ];
       this.blips = (function() {
@@ -218,6 +234,8 @@
       }).call(this);
       this.center = new V2(0, 0);
       this.zoom = 3;
+      this.births = 0;
+      this.deaths = 0;
     }
 
     Game.prototype.drawCircle = function(x, y, r, fill) {
@@ -229,7 +247,7 @@
 
     Game.prototype.draw = function() {
       var b, canvasCenter, h, r, x, y, _i, _j, _len, _len1, _ref, _ref1, _ref2, _ref3;
-      this.ctx.fillStyle = '#888';
+      this.ctx.fillStyle = '#ddb';
       this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
       canvasCenter = new V2(this.canvas.width * 0.5, this.canvas.height * 0.5);
       _ref = this.habitats;
@@ -237,7 +255,7 @@
         h = _ref[_i];
         _ref1 = h.circle.center.minus(this.center).times(new V2(this.zoom, this.zoom)).plus(canvasCenter), x = _ref1.x, y = _ref1.y;
         r = h.circle.radius * this.zoom;
-        this.drawCircle(x, y, r, '#33a');
+        this.drawCircle(x, y, r, '#05a');
       }
       _ref2 = this.blips;
       for (_j = 0, _len1 = _ref2.length; _j < _len1; _j++) {
@@ -250,7 +268,8 @@
       }
       this.ctx.fillStyle = 'black';
       this.ctx.font = '20px monospace';
-      return this.ctx.fillText("(" + (this.center.x.toFixed(3)) + ", " + (this.center.y.toFixed(3)) + ")", 10, 25);
+      this.ctx.fillText("Viewing (" + (this.center.x.toFixed(3)) + ", " + (this.center.y.toFixed(3)) + ")", 10, 25);
+      return this.ctx.fillText("" + this.births + " births, " + this.deaths + " deaths", 10, 50);
     };
 
     Game.prototype.mousedown = function(clickPosn) {
