@@ -32,7 +32,7 @@
     }
 
     Blip.prototype.live = function() {
-      var d, destDistance, destination, goTowards, goVector, h, vector, _i, _len, _ref;
+      var b, d, destDistance, destination, goTowards, goVector, h, _i, _j, _len, _len1, _ref, _ref1;
       destination = null;
       destDistance = 1 / 0;
       _ref = this.game.habitats;
@@ -47,10 +47,16 @@
       if (destination != null) {
         goTowards = destination.circle.center;
         goVector = goTowards.minus(this.circle.center);
-        vector = V2Polar(Math.min(this.speed, goVector.magnitude()), goVector.angle());
-        this.circle.center = this.circle.center.plus(vector);
+        goVector = goVector.withMagnitude(Math.min(this.speed, goVector.magnitude()));
+        this.circle = this.circle.move(goVector);
+        _ref1 = this.game.blips;
+        for (_j = 0, _len1 = _ref1.length; _j < _len1; _j++) {
+          b = _ref1[_j];
+          if (b !== this) {
+            this.circle = this.circle.pushBack(b.circle);
+          }
+        }
       }
-      this.age++;
       return this.age < this.expire;
     };
 
@@ -83,7 +89,7 @@
     }
 
     Circle.prototype.touchDistance = function(other) {
-      return Math.min(0, this.center.distance(other.center) - this.radius - other.radius);
+      return this.centerDistance(other) - this.radius - other.radius;
     };
 
     Circle.prototype.centerDistance = function(other) {
@@ -91,7 +97,23 @@
     };
 
     Circle.prototype.inside = function(other) {
-      return this.radius < other.radius && this.centerDistance(other) < other.radius - this.radius;
+      return this.radius <= other.radius && this.centerDistance(other) < other.radius - this.radius;
+    };
+
+    Circle.prototype.move = function(v) {
+      return new Circle({
+        center: this.center.plus(v),
+        radius: this.radius
+      });
+    };
+
+    Circle.prototype.pushBack = function(other) {
+      var d;
+      d = this.touchDistance(other);
+      if (d >= 0) {
+        return this;
+      }
+      return this.move(V2Polar(-d, this.center.minus(other.center).angle() + Math.random() - 0.5));
     };
 
     return Circle;
@@ -136,6 +158,14 @@
       return Math.atan2(this.y, this.x);
     };
 
+    V2.prototype.withMagnitude = function(r) {
+      return V2Polar(r, this.angle());
+    };
+
+    V2.prototype.withAngle = function(theta) {
+      return V2Polar(this.magnitude(), theta);
+    };
+
     return V2;
 
   })();
@@ -146,6 +176,7 @@
 
   Game = (function() {
     function Game(canvas) {
+      var x;
       this.canvas = canvas;
       this.ctx = canvas.getContext('2d');
       this.habitats = [
@@ -156,19 +187,24 @@
           })
         })
       ];
-      this.blips = [
-        new Blip(this, {
-          circle: new Circle({
-            center: new V2(0, 0),
-            radius: 5
-          }),
-          speed: 1,
-          age: 0,
-          breed: [300, 400, 500, 600, 700],
-          expire: 1000,
-          health: 50
-        })
-      ];
+      this.blips = (function() {
+        var _i, _results;
+        _results = [];
+        for (x = _i = 10; _i <= 100; x = _i += 5) {
+          _results.push(new Blip(this, {
+            circle: new Circle({
+              center: new V2(x, 0),
+              radius: 5
+            }),
+            speed: 1,
+            age: 0,
+            breed: [300, 400, 500, 600, 700],
+            expire: 1000,
+            health: 50
+          }));
+        }
+        return _results;
+      }).call(this);
       this.center = new V2(0, 0);
       this.zoom = 3;
     }

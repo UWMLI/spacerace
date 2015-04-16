@@ -17,9 +17,12 @@ class Blip
     if destination?
       goTowards = destination.circle.center
       goVector = goTowards.minus(@circle.center)
-      vector = V2Polar(Math.min(@speed, goVector.magnitude()), goVector.angle())
-      @circle.center = @circle.center.plus vector
-    @age++
+      goVector = goVector.withMagnitude Math.min(@speed, goVector.magnitude())
+      @circle = @circle.move goVector
+      for b in @game.blips
+        if b isnt @
+          @circle = @circle.pushBack(b.circle)
+    # @age++
     @age < @expire
 
   inHabitat: ->
@@ -31,15 +34,30 @@ class Circle
   constructor: (attrs = {}) ->
     @[k] = v for k, v of attrs
 
-  # Returns the shortest distance between the two circles, or 0 if they are touching.
+  # Returns the shortest distance between the two circles.
+  # If 0, the circles are exactly touching.
+  # If less than 0, the circles are overlapping.
   touchDistance: (other) ->
-    Math.min(0, @center.distance(other.center) - @radius - other.radius)
+    @centerDistance(other) - @radius - other.radius
 
+  # The distance between 2 circles' centers.
   centerDistance: (other) ->
     @center.distance(other.center)
 
+  # True if this circle is completely enclosed inside the other circle.
   inside: (other) ->
-    @radius < other.radius and @centerDistance(other) < other.radius - @radius
+    @radius <= other.radius and @centerDistance(other) < other.radius - @radius
+
+  move: (v) ->
+    new Circle
+      center: @center.plus(v)
+      radius: @radius
+
+  # Moves this circle so it's not overlapping the other one. (Mostly.)
+  pushBack: (other) ->
+    d = @touchDistance(other)
+    return @ if d >= 0
+    @move V2Polar(-d, @center.minus(other.center).angle() + Math.random() - 0.5)
 
 class V2
   constructor: (@x, @y) ->
@@ -62,6 +80,12 @@ class V2
   angle: ->
     Math.atan2 @y, @x
 
+  withMagnitude: (r) ->
+    V2Polar(r, @angle())
+
+  withAngle: (theta) ->
+    V2Polar(@magnitude(), theta)
+
 V2Polar = (r, theta) ->
   new V2(r * Math.cos(theta), r * Math.sin(theta))
 
@@ -75,16 +99,17 @@ class Game
           radius: 30
       ]
     @blips =
-      [ new Blip @,
-        circle: new Circle
-          center: new V2(0, 0)
-          radius: 5
-        speed: 1
-        age: 0
-        breed: [300, 400, 500, 600, 700]
-        expire: 1000
-        health: 50
-      ]
+      for x in [10..100] by 5
+        new Blip(@,
+          circle: new Circle
+            center: new V2(x, 0)
+            radius: 5
+          speed: 1
+          age: 0
+          breed: [300, 400, 500, 600, 700]
+          expire: 1000
+          health: 50
+        )
     @center = new V2 0, 0
     @zoom = 3
 
