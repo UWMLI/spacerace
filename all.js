@@ -90,16 +90,47 @@
       return this.ctx.strokeRect(0, 0, this.canvas.width, this.canvas.height);
     };
 
+    Game.prototype.mousedown = function(clickPosn) {
+      this.clickPosn = clickPosn;
+      return this.clickCenter = this.center;
+    };
+
+    Game.prototype.mousemove = function(posn) {
+      var offset;
+      if (this.clickPosn != null) {
+        offset = posn.minus(this.clickPosn).times(new V2(1 / this.zoom, 1 / this.zoom));
+        this.center = this.clickCenter.minus(offset);
+        return this.draw();
+      }
+    };
+
+    Game.prototype.mouseup = function(posn) {
+      this.mousemove(posn);
+      return delete this.clickPosn;
+    };
+
     return Game;
 
   })();
 
   $(document).ready(function() {
-    var canvas;
+    var canvas, mouseEvent, _fn, _i, _len, _ref;
     canvas = $('#the-canvas')[0];
     canvas.width = 640;
     canvas.height = 480;
     window.game = new Game(canvas);
+    _ref = ['mousedown', 'mousemove', 'mouseup'];
+    _fn = function(mouseEvent) {
+      return $('#the-canvas')[mouseEvent](function(e) {
+        var left, top, _ref1;
+        _ref1 = $(this).parent().offset(), left = _ref1.left, top = _ref1.top;
+        return window.game[mouseEvent](new V2(e.pageX - left, e.pageY - top));
+      });
+    };
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      mouseEvent = _ref[_i];
+      _fn(mouseEvent);
+    }
     return window.game.draw();
   });
 

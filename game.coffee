@@ -45,9 +45,27 @@ class Game
     @ctx.strokeStyle = 'black'
     @ctx.strokeRect 0, 0, @canvas.width, @canvas.height
 
+  mousedown: (@clickPosn) ->
+    @clickCenter = @center
+
+  mousemove: (posn) ->
+    if @clickPosn?
+      offset = posn.minus(@clickPosn).times(new V2(1 / @zoom, 1 / @zoom))
+      @center = @clickCenter.minus(offset)
+      @draw()
+
+  mouseup: (posn) ->
+    @mousemove posn
+    delete @clickPosn
+
 $(document).ready ->
   canvas = $('#the-canvas')[0]
   canvas.width = 640
   canvas.height = 480
   window.game = new Game canvas
+  for mouseEvent in ['mousedown', 'mousemove', 'mouseup']
+    do (mouseEvent) ->
+      $('#the-canvas')[mouseEvent] (e) ->
+        {left, top} = $(this).parent().offset()
+        window.game[mouseEvent] new V2(e.pageX - left, e.pageY - top)
   window.game.draw()
